@@ -1,7 +1,7 @@
 package net.scalax.asuna.sample.dto1
 
-import net.scalax.asuna.helper.RootTable
-import net.scalax.asuna.helper.data.macroImpl.EmptyLazyOutput
+import net.scalax.asuna.mapper.common.annotations.RootTable
+import net.scalax.asuna.mapper.decoder.EmptyLazyOutput
 
 import scala.annotation.meta.field
 
@@ -36,7 +36,7 @@ object Test01 extends DtoHelper with App {
   val model3: TargetModel = dto.effect(dto.modelOnly[TargetModel](new SourceModel3Ext(source3)).compile).model
   println(model3)
 
-  case class SourceModel4(id: String = "not to use", name: String = "not to use", age: Int, describe: Int)
+  case class SourceModel4(age: Int, describe: Int)
   case class IdGen(id: Int, name: String)
   class SourceModel4Ext(@(RootTable @field) val rootModel: SourceModel4) {
     val describe = "wangwangwang"

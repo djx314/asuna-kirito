@@ -1,8 +1,8 @@
 package net.scalax.asuna.sample.dto1
 
 import net.scalax.asuna.core.decoder.{DecoderShape, SplitData}
-import net.scalax.asuna.helper.decoder.{DecoderContent, DecoderHelper, DecoderWrapperHelper}
-import net.scalax.asuna.helper.encoder.HListEncoderShapeWrap
+import net.scalax.asuna.mapper.common.RepColumnContent
+import net.scalax.asuna.mapper.decoder.{DecoderContent, DecoderHelper, DecoderWrapperHelper}
 
 trait DtoWrapper[RepOut, DataType] extends DecoderContent[RepOut, DataType] {
   def model: DataType
@@ -21,11 +21,11 @@ trait DtoHelper {
     }
   }
 
-  implicit def dtoShapeImplicit1[T]: DecoderShape.Aux[HListEncoderShapeWrap[T, T], T, T, (Any, Any), (Any, Any)] =
-    new DecoderShape[HListEncoderShapeWrap[T, T], (Any, Any), (Any, Any)] {
+  implicit def dtoShapeImplicit1[T]: DecoderShape.Aux[RepColumnContent[T, T], T, T, (Any, Any), (Any, Any)] =
+    new DecoderShape[RepColumnContent[T, T], (Any, Any), (Any, Any)] {
       override type Target = T
       override type Data   = T
-      override def wrapRep(base: HListEncoderShapeWrap[T, T]): T     = base.rep
+      override def wrapRep(base: RepColumnContent[T, T]): T          = base.rep
       override def toLawRep(base: T, oldRep: (Any, Any)): (Any, Any) = (base, oldRep)
       override def takeData(rep: T, oldData: (Any, Any)): SplitData[T, (Any, Any)] =
         SplitData(current = oldData._1.asInstanceOf[T], left = oldData._2.asInstanceOf[(Any, Any)])
