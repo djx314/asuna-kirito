@@ -16,7 +16,7 @@ trait DtoHelper {
       val cols    = shape.toLawRep(wrapCol, null)
       val data    = shape.takeData(wrapCol, cols)
       new DtoWrapper[Out, D] {
-        override def model: D = data.current
+        override val model: D = data.current
       }
     }
   }

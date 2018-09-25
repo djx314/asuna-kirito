@@ -1,7 +1,7 @@
 package net.scalax.asuna.sample.dto1
 
 import net.scalax.asuna.mapper.common.annotations.RootTable
-import net.scalax.asuna.mapper.decoder.{EmptyLazyOutput, LazyData}
+import net.scalax.asuna.mapper.decoder.LazyData
 
 import scala.annotation.meta.field
 
