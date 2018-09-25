@@ -134,5 +134,98 @@ trait DtoHelper {
 仅需这 30 行左右的代码，一个 DTO 转换的逻辑即可实现。可以看到，DecoderShape 一般以 implicit
 的形式存在。但这里的 Rep 不是 T，原则上是可以使用 T
 的，但作为隐式转换而言限制太少，容易造成编译问题，所以这里使用了
-RepColumnContent[T, T]，第一个类型参数代表 Table 的列的类型，第二个参数代表期望的 Model
-属性数据类型，
+RepColumnContent[T, T]，第一个类型参数代表 Table 的列的类型，这里是 Id[T]，即
+T。第二个参数代表期望的 Model 属性数据类型。
+
+在这个 DecoderShape 的实现中，我们可以看到，wrapRep 做了一个简单的转换，把
+RepColumnContent[T, T] 变成了方便处理的类型 T。wrapRep
+在逐个叠加列到一个统一的数据类型，这里为了性能更好，我们选择了
+Tuple2[Any, Any]，其实根据这里的作用，选择 List[Any] 也是可以的。注意，在
+takeData 中我们获取数据的方向跟 toLawRep
+是相反的，这样可以使我们方便地使用一些基于栈的数据类型。而之后我们会看到，由于 EncoderShape
+的 Model 数据是在方法的参数端，所以 takeData 的方向跟 toLawRep 是相同的。
+
+在 object dto 中，我们定义了一系列上下文的操作，DecoderWrapperHelper、DtoWrapper 和
+effect 方法这 3 个实现是可选的，你可以根据自己的喜好使用自己的方式实现。而 DecoderHelper
+则封装了一些基础的操作方法，包括一些 DecoderShape 的基本操作和 Table <-> Model
+映射的宏操作。
+
+现在让我们来看看这个映射到底能实现什么功能。
+
+基础类型定义
+
+```scala
+case class TargetModel(id: Int, name: String, age: Int, describe: String)
+```
+
+```scala
+case class SourceModel1(id: Int, name: String, age: Int, describe: String)
+//简单变换
+val source1             = SourceModel1(2333, "miaomiaomiao", 12, "wangwangwang")
+val model1: TargetModel = dto.effect(dto.modelOnly[TargetModel](source1).compile).model
+println(model1)
+```
+
+首先我们可以实现一个最基本的 DTO 转换，在属性相同类型匹配的情况下直接转换 SourceModel1 到目标类型
+TargetModel。
+
+```scala
+case class SourceModel2(age: Int, describe: String)
+class SourceModel2Ext(@(RootTable @field) val rootModel: SourceModel2) {
+    val id   = 2333
+    val name = "miaomiaomiao"
+}
+//扩展现有属性
+val source2             = SourceModel2(12, "wangwangwang")
+val model2: TargetModel = dto.effect(dto.modelOnly[TargetModel](new SourceModel2Ext(source2)).compile).model
+println(model2)
+```
+
+SourceModel2 中如果有部分属性需要附加，可以使用 RootTable 注解。RootTable
+会把该属性的所有子属性全部附加到 SourceModel2Ext 中作为一级属性，而 SourceModel2Ext
+中的一级属性必然具有更高的优先级，所以这一特性还可以用来覆盖现有属性。
+
+注意：rootModel 在加了 RootTable
+注解之后不可以再作为普通属性使用，所以一般不要使用带有歧义的属性名称。
+
+```scala
+case class SourceModel3(id: String, name: String, age: Int, describe: Int)
+class SourceModel3Ext(@(RootTable @field) val rootModel: SourceModel3) {
+    val id       = 2333
+    val name     = "miaomiaomiao"
+    val describe = "wangwangwang"
+}
+//重写现有属性
+val source3             = SourceModel3("error id", "error name", 12, Int.MaxValue)
+val model3: TargetModel = dto.effect(dto.modelOnly[TargetModel](new SourceModel3Ext(source3)).compile).model
+println(model3)
+```
+
+上述例子就体现了如何覆盖现有属性，id、name、describe 这 3 个属性不论类型都将由 SourceModel3Ext
+里面的一级属性覆盖。
+
+而如果有些 Model 的属性还不能在一开始就决定，例如需要从其他数据源中获取 id 值和 name
+值才能构造成一个完整的 TargetModel，该如何操作呢？asuna 提供了一个 LazyData 的操作，
+
+```scala
+case class SourceModel4(age: Int, describe: Int)
+case class IdGen(id: Int, name: String)
+case class SubPro(age: Int)
+class SourceModel4Ext(@(RootTable @field) val rootModel: SourceModel4) {
+    val describe = "wangwangwang"
+}
+//懒加载
+val source4                      = SourceModel4(age = 12, describe = Int.MaxValue)
+val model4: LazyData[IdGen, TargetModel, SubPro] = dto.effect(dto.lazyData[IdGen, TargetModel, SubPro](new SourceModel4Ext(source4)).compile).model
+println(model4(IdGen(2333, "miaomiaomiao")))
+println(model4.sub)
+```
+
+他将会自动检测 IdGen 的列，不对 SourceModel4Ext 中相同属性名称的属性进行求值，而是生成一个
+LazyData[IdGen, TargetModel, SubPro]，他是 IdGen => TargetModel
+的子类。并且直接通过 sub 属性对外暴露
+SubPro，以方便在还未能求值的前提下暴露一些已经有值的列(这里是 age)。
+
+#### 3. 设计一个支持 Future 的 DTO 转换逻辑
+
+blablabla
