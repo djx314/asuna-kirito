@@ -12,8 +12,6 @@ trait FutureDtoWrapper[RepOut, DataType] extends DecoderContent[RepOut, DataType
 
 trait FutureDtoHelper {
 
-  case class LiteralValue[T](value: T)
-
   object dtoF extends DecoderHelper[Future[(Any, Any)], (Any, Any)] with DecoderWrapperHelper[Future[(Any, Any)], (Any, Any), FutureDtoWrapper] {
     override def effect[Rep, D, Out](rep: Rep)(implicit shape: DecoderShape.Aux[Rep, D, Out, Future[(Any, Any)], (Any, Any)]): FutureDtoWrapper[Out, D] = {
       val wrapCol = shape.wrapRep(rep)
@@ -53,18 +51,6 @@ trait FutureDtoHelper {
         }
       }
       override def takeData(rep: Future[T], oldData: (Any, Any)): SplitData[T, (Any, Any)] =
-        SplitData(current = oldData._1.asInstanceOf[T], left = oldData._2.asInstanceOf[(Any, Any)])
-    }
-
-  implicit def futureDtoShapeImplicit3[T](
-      implicit ec: ExecutionContext
-  ): DecoderShape.Aux[RepColumnContent[LiteralValue[T], T], T, T, Future[(Any, Any)], (Any, Any)] =
-    new DecoderShape[RepColumnContent[LiteralValue[T], T], Future[(Any, Any)], (Any, Any)] {
-      override type Target = T
-      override type Data   = T
-      override def wrapRep(base: RepColumnContent[LiteralValue[T], T]): T            = base.rep.value
-      override def toLawRep(base: T, oldRep: Future[(Any, Any)]): Future[(Any, Any)] = oldRep.map(r => (base, r))
-      override def takeData(rep: T, oldData: (Any, Any)): SplitData[T, (Any, Any)] =
         SplitData(current = oldData._1.asInstanceOf[T], left = oldData._2.asInstanceOf[(Any, Any)])
     }
 
