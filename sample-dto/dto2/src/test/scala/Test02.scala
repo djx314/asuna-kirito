@@ -1,6 +1,6 @@
 package net.scalax.asuna.sample.dto1
 
-import net.scalax.asuna.mapper.common.annotations.RootTable
+import net.scalax.asuna.mapper.common.annotations.{RootDataProperty, RootTable}
 import net.scalax.asuna.mapper.decoder.LazyData
 import net.scalax.asuna.sample.dto2.FutureDtoHelper
 
@@ -52,5 +52,17 @@ object Test02 extends FutureDtoHelper with App {
   val model4: Future[LazyData[IdGen, TargetModel, SubPro]] = dtoF.effect(dtoF.lazyData[IdGen, TargetModel, SubPro](new SourceModel4Ext(source4)).compile).model
   println(await(model4)(IdGen(2333, "miaomiaomiao")))
   println(await(model4).sub)
+
+  case class SourceModel5(age: Int, describe: String)
+  case class IdGen1(id: Int)
+  class SourceModel5Ext(@(RootDataProperty[SourceModel5] @field) val rootModel: Future[SourceModel5]) {
+    val name = Future.successful("miaomiaomiao")
+  }
+  //懒加载
+  val source5F = Future.successful(SourceModel5(age = 12, describe = "wangwangwang"))
+  val model5: Future[LazyData[IdGen1, TargetModel, SubPro]] =
+    dtoF.effect(dtoF.lazyData[IdGen1, TargetModel, SubPro](new SourceModel5Ext(source5F)).compile).model
+  println(await(model5)(IdGen1(2333)))
+  println(await(model5).sub)
 
 }
