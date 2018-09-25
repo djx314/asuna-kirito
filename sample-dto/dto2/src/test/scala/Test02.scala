@@ -58,7 +58,7 @@ object Test02 extends FutureDtoHelper with App {
   class SourceModel5Ext(@(RootDataProperty[SourceModel5] @field) val rootModel: Future[SourceModel5]) {
     val name = Future.successful("miaomiaomiao")
   }
-  //懒加载
+  //提升数据类型对应属性等级
   val source5F = Future.successful(SourceModel5(age = 12, describe = "wangwangwang"))
   val model5: Future[LazyData[IdGen1, TargetModel, SubPro]] =
     dtoF.effect(dtoF.lazyData[IdGen1, TargetModel, SubPro](new SourceModel5Ext(source5F)).compile).model
