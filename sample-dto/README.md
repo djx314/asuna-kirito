@@ -223,7 +223,7 @@ println(model4.sub) //SubPro(12)
 
 他将会自动检测 IdGen 的列，不对 SourceModel4Ext 中相同属性名称的属性进行求值，而是生成一个
 LazyData[IdGen, TargetModel, SubPro]，他是 IdGen => TargetModel
-的子类。并且直接通过 sub 属性对外暴露
+的子类，并且直接通过 sub 属性对外暴露
 SubPro，以方便在还未能求值的前提下暴露一些已经有值的列(这里是 age)。
 
 #### 3. 设计一个支持 Future 的 DTO 转换逻辑
