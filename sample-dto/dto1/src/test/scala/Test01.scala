@@ -43,7 +43,7 @@ object Test01 extends DtoHelper with App {
     val describe = "wangwangwang"
   }
   //懒加载
-  val source4                      = SourceModel4(age = 12, describe = Int.MaxValue)
+  val source4                                      = SourceModel4(age = 12, describe = Int.MaxValue)
   val model4: LazyData[IdGen, TargetModel, SubPro] = dto.effect(dto.lazyData[IdGen, TargetModel, SubPro](new SourceModel4Ext(source4)).compile).model
   println(model4(IdGen(2333, "miaomiaomiao")))
   println(model4.sub)

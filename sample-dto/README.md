@@ -163,7 +163,7 @@ case class SourceModel1(id: Int, name: String, age: Int, describe: String)
 //简单变换
 val source1             = SourceModel1(2333, "miaomiaomiao", 12, "wangwangwang")
 val model1: TargetModel = dto.effect(dto.modelOnly[TargetModel](source1).compile).model
-println(model1)
+println(model1) //TargetModel(2333,miaomiaomiao,12,wangwangwang)
 ```
 
 首先我们可以实现一个最基本的 DTO 转换，在属性相同类型匹配的情况下直接转换 SourceModel1 到目标类型
@@ -178,7 +178,7 @@ class SourceModel2Ext(@(RootTable @field) val rootModel: SourceModel2) {
 //扩展现有属性
 val source2             = SourceModel2(12, "wangwangwang")
 val model2: TargetModel = dto.effect(dto.modelOnly[TargetModel](new SourceModel2Ext(source2)).compile).model
-println(model2)
+println(model2) //TargetModel(2333,miaomiaomiao,12,wangwangwang)
 ```
 
 SourceModel2 中如果有部分属性需要附加，可以使用 RootTable 注解。RootTable
@@ -198,7 +198,7 @@ class SourceModel3Ext(@(RootTable @field) val rootModel: SourceModel3) {
 //重写现有属性
 val source3             = SourceModel3("error id", "error name", 12, Int.MaxValue)
 val model3: TargetModel = dto.effect(dto.modelOnly[TargetModel](new SourceModel3Ext(source3)).compile).model
-println(model3)
+println(model3) //TargetModel(2333,miaomiaomiao,12,wangwangwang)
 ```
 
 上述例子就体现了如何覆盖现有属性，id、name、describe 这 3 个属性不论类型都将由 SourceModel3Ext
@@ -217,8 +217,8 @@ class SourceModel4Ext(@(RootTable @field) val rootModel: SourceModel4) {
 //懒加载
 val source4                      = SourceModel4(age = 12, describe = Int.MaxValue)
 val model4: LazyData[IdGen, TargetModel, SubPro] = dto.effect(dto.lazyData[IdGen, TargetModel, SubPro](new SourceModel4Ext(source4)).compile).model
-println(model4(IdGen(2333, "miaomiaomiao")))
-println(model4.sub)
+println(model4(IdGen(2333, "miaomiaomiao"))) //TargetModel(2333,miaomiaomiao,12,wangwangwang)
+println(model4.sub) //SubPro(12)
 ```
 
 他将会自动检测 IdGen 的列，不对 SourceModel4Ext 中相同属性名称的属性进行求值，而是生成一个
