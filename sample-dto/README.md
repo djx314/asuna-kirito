@@ -2,8 +2,8 @@
 
 # 第一篇: 简介
 
-asuna 是 Scala 的一个类型驱动的解决函数式对象映射(Functional Object
-Mapping)问题的库，可以用来解决按属性名称对应的读写器实例和 case class
+asuna 是 Scala 的一个类型驱动的提供函数式对象映射(Functional Object
+Mapping)支持的库，可以用来解决按属性名称对应的读写器实例和 case class
 之间的映射问题，并且不会使用运行时反射而带来额外的开销。
 
 #### 1. 问题情境
@@ -43,9 +43,9 @@ case class 之间的转换逻辑吧。
 
 观察上文 slick 的例子，Table 里面的列声明类型系统相对复杂，有
 Rep[T]、Rep[Option[T]] 等基本类型，也有
-(Rep[Int], (Rep[LOng], Rep[Option[String]])) 等复杂类型，slick
-内部是使用一个叫 Shape 的类来把这些列析构成类似 List[Rep[_]] 的结构再把数据库查询到的诸如
-List[Any] 类型的数据重新构造成意料之中的类型。
+(Rep[Int], (Rep[LOng], Rep[Option[String]])) 等复合类型，slick
+内部使用一个叫 Shape 的类来把这些列析构成类似 List[Rep[_]] 的结构再把数据库查询到的诸如
+List[Any] 类型的数据重新构造出需要的类型。
 
 asuna 也使用了类似的概念，在 asuna 中，主要使用了
 EncoderShape 和 DecoderShape 来进行映射逻辑的封装。EncoderShape 主要负责把 Model
@@ -131,22 +131,22 @@ trait DtoHelper {
 }
 ```
 
-仅需这 30 行左右的代码，一个 DTO 转换的逻辑即可实现。可以看到，DecoderShape 一般以 implicit
-的形式存在。但这里的 Rep 不是 T，原则上是可以使用 T
+仅用 30 行左右的代码，即实现了一个 DTO 转换的逻辑。可以看到，DecoderShape 一般以 implicit
+的形式提供。请注意这里的 Rep 不是 T，原则上是可以使用 T
 的，但作为隐式转换而言限制太少，容易造成编译问题，所以这里使用了
-RepColumnContent[T, T]，第一个类型参数代表 Table 的列的类型，这里是 Id[T]，即
-T。第二个参数代表期望的 Model 属性数据类型。
+RepColumnContent[T, T]，第一个类型参数代表 Table 的列的类型(这里是 Id[T]，即
+T)。第二个参数代表期望的 Model 属性数据类型。
 
 在这个 DecoderShape 的实现中，我们可以看到，wrapRep 做了一个简单的转换，把
 RepColumnContent[T, T] 变成了方便处理的类型 T。wrapRep
 在逐个叠加列到一个统一的数据类型，这里为了性能更好，我们选择了
 Tuple2[Any, Any]，其实根据这里的作用，选择 List[Any] 也是可以的。注意，在
 takeData 中我们获取数据的方向跟 toLawRep
-是相反的，这样可以使我们方便地使用一些基于栈的数据类型。而之后我们会看到，由于 EncoderShape
-的 Model 数据是在方法的参数端，所以 takeData 的方向跟 toLawRep 是相同的。
+是相反的，这样我们可以方便地使用一些基于栈的数据类型。而之后的例子中我们会看到，由于 EncoderShape
+的 Model 数据是在方法的参数端，takeData 的方向跟 toLawRep 是相同的。
 
-在 object dto 中，我们定义了一系列上下文的操作，DecoderWrapperHelper、DtoWrapper 和
-effect 方法这 3 个实现是可选的，你可以根据自己的喜好使用自己的方式实现。而 DecoderHelper
+在 object dto 中，我们定义了一系列上下文的操作，可以注意到 DecoderWrapperHelper、DtoWrapper 和
+effect 方法这 3 个实现是可选的，亦可以根据喜好自己实现。而 DecoderHelper
 则封装了一些基础的操作方法，包括一些 DecoderShape 的基本操作和 Table <-> Model
 映射的宏操作。
 
@@ -216,13 +216,13 @@ class SourceModel4Ext(@(RootTable @field) val rootModel: SourceModel4) {
 }
 //懒加载
 val source4                      = SourceModel4(age = 12, describe = Int.MaxValue)
-val model4: LazyData[IdGen, TargetModel, SubPro] = dto.effect(dto.lazyData[IdGen, TargetModel, SubPro](new SourceModel4Ext(source4)).compile).model
+val model4: LazyModel[IdGen, TargetModel, SubPro] = dto.effect(dto.lazyModel[IdGen, TargetModel, SubPro](new SourceModel4Ext(source4)).compile).model
 println(model4(IdGen(2333, "miaomiaomiao"))) //TargetModel(2333,miaomiaomiao,12,wangwangwang)
 println(model4.sub) //SubPro(12)
 ```
 
-他将会自动检测 IdGen 的列，不对 SourceModel4Ext 中相同属性名称的属性进行求值，而是生成一个
-LazyData[IdGen, TargetModel, SubPro]，他是 IdGen => TargetModel
+他将会自动检测 IdGen 的列，不对 SourceModel4Ext 中相同名称的属性进行求值，而是直接生成一个
+LazyModel[IdGen, TargetModel, SubPro]。LazyModel[IdGen, TargetModel, SubPro] 是 IdGen => TargetModel
 的子类，并且直接通过 sub 属性对外暴露
 SubPro，以方便在还未能求值的前提下暴露一些已经有值的列(这里是 age)。
 
